@@ -76,6 +76,8 @@ public class EngineHost : IDisposable
 
         await engine.Initialize(engineDir, useRenderer: false, options, systemInfo, initProgress);
         Engine.Config.DisableIntroTutorial = true;
+        // CI build では下行の "AudioClient" に sed で "v<version>+<short SHA>" が
+        // 付与される (.github/workflows/build.yml の "Stamp build tag" ステップ参照)。
         SetRendererName(engine, "AudioClient");
         Userspace.SetupUserspace(engine);
 
