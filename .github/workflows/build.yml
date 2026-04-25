@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  # PR 自動実行は行わず、Actions タブの "Run workflow" から手動でトリガする。
+  # workflow_dispatch は repo の write 権限保有者のみ実行可能。
+  workflow_dispatch:
+
+# 同一参照に対する連続実行 (push / 手動トリガ) の古いものをキャンセル
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    strategy:
+      # Windows と Linux を並列実行する。片方失敗しても他方は走らせる。
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore AudioClient.sln
+
+      # CI 環境には Resonite がインストールされていないため、
+      # ローカル DLL 参照は走らず Resonite.GameLibs (NuGet) にフォールバックする。
+      # post-build の CopyToGameFolder は GamePath への書き込みを伴うので CI では無効化。
+      - name: Build
+        run: dotnet build AudioClient.sln -c Release --no-restore -p:CopyToGameFolder=false
