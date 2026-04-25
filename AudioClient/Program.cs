@@ -19,14 +19,19 @@ public class Program
         string appDir = AppDomain.CurrentDomain.BaseDirectory;
         string gameDir = ResolveGameDirectory(appDir);
 
-        foreach (string runtimesPath in EnumerateNativeRuntimePaths(appDir, gameDir))
+        // PATH への native 検索パス追加は Windows のみ意味がある (Linux/macOS の dlopen は
+        // PATH を見ない)。非 Windows では NativeLibraryResolver で解決する。
+        if (OperatingSystem.IsWindows())
         {
-            string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-            var pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-            if (!pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
+            foreach (string runtimesPath in EnumerateNativeRuntimePaths(appDir, gameDir))
             {
-                Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
-                currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                var pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                if (!pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
+                {
+                    Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
+                    currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                }
             }
         }
 

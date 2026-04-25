@@ -115,6 +115,11 @@ public static class RuntimeBootstrap
 
     private static void AddNativeRuntimePaths()
     {
+        // PATH への native 検索パス追加は Windows のみ意味がある (Linux/macOS の dlopen は
+        // PATH を見ない)。非 Windows では NativeLibraryResolver で解決する。
+        if (!OperatingSystem.IsWindows())
+            return;
+
         string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
         var pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
 
