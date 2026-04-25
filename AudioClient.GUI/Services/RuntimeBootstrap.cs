@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
+using AudioClient.Core;
 using Microsoft.Win32;
 
 namespace AudioClient.GUI.Services;
@@ -50,6 +51,10 @@ public static class RuntimeBootstrap
 
         CurrentEngineDir = normalized;
         AddNativeRuntimePaths();
+        // ModuleInitializer 等が PreloadAssemblies 中に native lib を要求する可能性に備え、
+        // resolver を preload より先に登録しておく。Register は冪等で、エンジンディレクトリ
+        // 変更時 (persist: true) に呼び直されることで _searchDirs も最新化される。
+        NativeLibraryResolver.Register(EnumerateProbeDirectories());
         PreloadAssemblies();
 
         if (persist)
@@ -76,7 +81,12 @@ public static class RuntimeBootstrap
 
     public static void PrimeAssemblyLoading()
     {
+        // ApplyEngineDirectory と同じ順序: native lib の解決経路を整えてから preload する。
+        // [ModuleInitializer] 等で preload 中に native を要求するアセンブリが混ざっても
+        // 解決失敗しないようにする。
         AddNativeRuntimePaths();
+        NativeLibraryResolver.Register(EnumerateProbeDirectories());
+        LinuxNativeWorkaround.RedirectHarfBuzzSharpToSystem(_appDir);
         PreloadAssemblies();
     }
 
@@ -112,21 +122,29 @@ public static class RuntimeBootstrap
 
     private static void AddNativeRuntimePaths()
     {
+        // PATH への native 検索パス追加は Windows のみ意味がある (Linux/macOS の dlopen は
+        // PATH を見ない)。非 Windows では NativeLibraryResolver で解決する。
+        if (!OperatingSystem.IsWindows())
+            return;
+
         string currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
         var pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (string probeDir in EnumerateProbeDirectories())
         {
-            string runtimesPath = Path.Combine(probeDir, "runtimes", "win-x64", "native");
-            if (!Directory.Exists(runtimesPath))
-                continue;
+            foreach (string rid in NativeLibraryResolver.GetNativeRids())
+            {
+                string runtimesPath = Path.Combine(probeDir, "runtimes", rid, "native");
+                if (!Directory.Exists(runtimesPath))
+                    continue;
 
-            if (pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
-                continue;
+                if (pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
+                    continue;
 
-            Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
-            currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-            pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
+                currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            }
         }
     }
 
