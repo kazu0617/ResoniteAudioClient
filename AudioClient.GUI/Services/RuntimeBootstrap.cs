@@ -79,6 +79,7 @@ public static class RuntimeBootstrap
     {
         AddNativeRuntimePaths();
         PreloadAssemblies();
+        LinuxNativeWorkaround.RedirectHarfBuzzSharpToSystem(_appDir);
         NativeLibraryResolver.Register(EnumerateProbeDirectories());
     }
 
