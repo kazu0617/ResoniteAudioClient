@@ -35,7 +35,9 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore
-        run: dotnet restore AudioClient.sln
+        # publish で --no-restore する以上、復元時にも RID を渡しておかないと
+        # project.assets.json に net10.0/<rid> ターゲットが入らず NETSDK1047 で落ちる。
+        run: dotnet restore AudioClient.sln -r ${{ matrix.rid }}
 
       # CI 環境には Resonite がインストールされていないため、
       # ローカル DLL 参照は走らず Resonite.GameLibs (NuGet) にフォールバックする。
