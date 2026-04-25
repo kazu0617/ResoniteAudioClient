@@ -81,10 +81,13 @@ public static class RuntimeBootstrap
 
     public static void PrimeAssemblyLoading()
     {
+        // ApplyEngineDirectory と同じ順序: native lib の解決経路を整えてから preload する。
+        // [ModuleInitializer] 等で preload 中に native を要求するアセンブリが混ざっても
+        // 解決失敗しないようにする。
         AddNativeRuntimePaths();
-        PreloadAssemblies();
-        LinuxNativeWorkaround.RedirectHarfBuzzSharpToSystem(_appDir);
         NativeLibraryResolver.Register(EnumerateProbeDirectories());
+        LinuxNativeWorkaround.RedirectHarfBuzzSharpToSystem(_appDir);
+        PreloadAssemblies();
     }
 
     public static bool IsValidEngineDirectory(string? path)
