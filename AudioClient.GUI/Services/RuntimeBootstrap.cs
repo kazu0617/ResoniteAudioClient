@@ -51,6 +51,10 @@ public static class RuntimeBootstrap
 
         CurrentEngineDir = normalized;
         AddNativeRuntimePaths();
+        // ModuleInitializer 等が PreloadAssemblies 中に native lib を要求する可能性に備え、
+        // resolver を preload より先に登録しておく。Register は冪等で、エンジンディレクトリ
+        // 変更時 (persist: true) に呼び直されることで _searchDirs も最新化される。
+        NativeLibraryResolver.Register(EnumerateProbeDirectories());
         PreloadAssemblies();
 
         if (persist)
