@@ -90,7 +90,7 @@ public class Program
     {
         foreach (string probeDir in EnumerateProbeDirectories(appDir, gameDir))
         {
-            foreach (string rid in GetNativeRids())
+            foreach (string rid in NativeLibraryResolver.GetNativeRids())
             {
                 string runtimesPath = Path.Combine(probeDir, "runtimes", rid, "native");
                 if (Directory.Exists(runtimesPath))
@@ -99,13 +99,6 @@ public class Program
                 }
             }
         }
-    }
-
-    private static IEnumerable<string> GetNativeRids()
-    {
-        if (OperatingSystem.IsWindows()) yield return "win-x64";
-        else if (OperatingSystem.IsLinux()) yield return "linux-x64";
-        else if (OperatingSystem.IsMacOS()) yield return "osx-x64";
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

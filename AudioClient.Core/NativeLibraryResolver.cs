@@ -73,7 +73,7 @@ public static class NativeLibraryResolver
         }
     }
 
-    private static IEnumerable<string> GetNativeRids()
+    public static IEnumerable<string> GetNativeRids()
     {
         if (OperatingSystem.IsWindows()) yield return "win-x64";
         else if (OperatingSystem.IsLinux()) yield return "linux-x64";

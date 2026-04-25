@@ -129,7 +129,7 @@ public static class RuntimeBootstrap
 
         foreach (string probeDir in EnumerateProbeDirectories())
         {
-            foreach (string rid in GetNativeRids())
+            foreach (string rid in NativeLibraryResolver.GetNativeRids())
             {
                 string runtimesPath = Path.Combine(probeDir, "runtimes", rid, "native");
                 if (!Directory.Exists(runtimesPath))
@@ -143,13 +143,6 @@ public static class RuntimeBootstrap
                 pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
             }
         }
-    }
-
-    private static IEnumerable<string> GetNativeRids()
-    {
-        if (OperatingSystem.IsWindows()) yield return "win-x64";
-        else if (OperatingSystem.IsLinux()) yield return "linux-x64";
-        else if (OperatingSystem.IsMacOS()) yield return "osx-x64";
     }
 
     private static void PreloadAssemblies()
