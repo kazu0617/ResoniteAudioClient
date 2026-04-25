@@ -75,8 +75,11 @@ public static class NativeLibraryResolver
 
     public static IEnumerable<string> GetNativeRids()
     {
-        if (OperatingSystem.IsWindows()) yield return "win-x64";
-        else if (OperatingSystem.IsLinux()) yield return "linux-x64";
-        else if (OperatingSystem.IsMacOS()) yield return "osx-x64";
+        // ProcessArchitecture.{X64,Arm64,...} を小文字化すると RID のアーキ部分
+        // (x64, arm64, ...) と一致する。Apple Silicon や Linux ARM64 等で同じコードが効く。
+        string arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        if (OperatingSystem.IsWindows()) yield return $"win-{arch}";
+        else if (OperatingSystem.IsLinux()) yield return $"linux-{arch}";
+        else if (OperatingSystem.IsMacOS()) yield return $"osx-{arch}";
     }
 }
