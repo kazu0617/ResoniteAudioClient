@@ -39,6 +39,20 @@ jobs:
         # project.assets.json に net10.0/<rid> ターゲットが入らず NETSDK1047 で落ちる。
         run: dotnet restore AudioClient.sln -r ${{ matrix.rid }}
 
+      # AudioClient.Core/EngineHost.cs の SetRendererName 引数に
+      # "v<csproj Version>+<short SHA>" を sed で差し込む。CI build を他クライアント
+      # 側から識別できるようにするため。ローカル build では "AudioClient" のまま。
+      - name: Stamp build tag into RendererName
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' AudioClient/AudioClient.csproj)
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          TAG="v${VERSION}+${SHORT_SHA}"
+          sed -i "s|SetRendererName(engine, \"AudioClient\")|SetRendererName(engine, \"AudioClient ${TAG}\")|" AudioClient.Core/EngineHost.cs
+          echo "Stamped: AudioClient ${TAG}"
+          grep -n "SetRendererName" AudioClient.Core/EngineHost.cs
+
       # CI 環境には Resonite がインストールされていないため、
       # ローカル DLL 参照は走らず Resonite.GameLibs (NuGet) にフォールバックする。
       # post-build の CopyToGameFolder は GamePath への書き込みを伴うので CI では無効化。
