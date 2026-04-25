@@ -79,13 +79,13 @@
       <AppFiles Include="$(TargetDir)*" Exclude="$(TargetDir)*.pdb" />
       <AppFiles Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
       <!-- Avalonia native libs (SkiaSharp, HarfBuzz) — copy to runtimes folder already in PATH -->
-      <NativeFiles Include="$(TargetDir)runtimes\$(NativeRid)\native\*" Condition="'$(NativeRid)' != ''" />
+      <NativeFiles Include="$(TargetDir)runtimes/$(NativeRid)/native/*" Condition="'$(NativeRid)' != ''" />
     </ItemGroup>
     <MakeDir Directories="$(AppTargetDir)" Condition="'$(CopyToGameFolder)' == 'true'" />
-    <MakeDir Directories="$(AppTargetDir)runtimes\$(NativeRid)\native\"
+    <MakeDir Directories="$(AppTargetDir)runtimes/$(NativeRid)/native/"
              Condition="'$(CopyToGameFolder)' == 'true' AND '$(NativeRid)' != ''" />
     <Copy SourceFiles="@(AppFiles)" DestinationFolder="$(AppTargetDir)" Condition="'$(CopyToGameFolder)' == 'true'" />
-    <Copy SourceFiles="@(NativeFiles)" DestinationFolder="$(AppTargetDir)runtimes\$(NativeRid)\native\"
+    <Copy SourceFiles="@(NativeFiles)" DestinationFolder="$(AppTargetDir)runtimes/$(NativeRid)/native/"
           Condition="'$(CopyToGameFolder)' == 'true' AND '$(NativeRid)' != ''" />
     <Message Text="Copied GUI files to $(AppTargetDir) (rid=$(NativeRid))" Importance="high" Condition="'$(CopyToGameFolder)' == 'true'" />
   </Target>
