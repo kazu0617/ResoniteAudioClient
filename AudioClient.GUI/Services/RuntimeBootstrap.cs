@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
+using AudioClient.Core;
 using Microsoft.Win32;
 
 namespace AudioClient.GUI.Services;
@@ -78,6 +79,7 @@ public static class RuntimeBootstrap
     {
         AddNativeRuntimePaths();
         PreloadAssemblies();
+        NativeLibraryResolver.Register(EnumerateProbeDirectories());
     }
 
     public static bool IsValidEngineDirectory(string? path)
@@ -117,17 +119,27 @@ public static class RuntimeBootstrap
 
         foreach (string probeDir in EnumerateProbeDirectories())
         {
-            string runtimesPath = Path.Combine(probeDir, "runtimes", "win-x64", "native");
-            if (!Directory.Exists(runtimesPath))
-                continue;
+            foreach (string rid in GetNativeRids())
+            {
+                string runtimesPath = Path.Combine(probeDir, "runtimes", rid, "native");
+                if (!Directory.Exists(runtimesPath))
+                    continue;
 
-            if (pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
-                continue;
+                if (pathEntries.Contains(runtimesPath, StringComparer.OrdinalIgnoreCase))
+                    continue;
 
-            Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
-            currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-            pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                Environment.SetEnvironmentVariable("PATH", runtimesPath + Path.PathSeparator + currentPath);
+                currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+                pathEntries = currentPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            }
         }
+    }
+
+    private static IEnumerable<string> GetNativeRids()
+    {
+        if (OperatingSystem.IsWindows()) yield return "win-x64";
+        else if (OperatingSystem.IsLinux()) yield return "linux-x64";
+        else if (OperatingSystem.IsMacOS()) yield return "osx-x64";
     }
 
     private static void PreloadAssemblies()

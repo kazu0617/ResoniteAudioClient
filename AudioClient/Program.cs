@@ -55,6 +55,8 @@ public class Program
             }
         }
 
+        NativeLibraryResolver.Register(EnumerateProbeDirectories(appDir, gameDir));
+
         await RunEngine(args, appDir, gameDir);
     }
 
@@ -83,12 +85,22 @@ public class Program
     {
         foreach (string probeDir in EnumerateProbeDirectories(appDir, gameDir))
         {
-            string runtimesPath = Path.Combine(probeDir, "runtimes", "win-x64", "native");
-            if (Directory.Exists(runtimesPath))
+            foreach (string rid in GetNativeRids())
             {
-                yield return runtimesPath;
+                string runtimesPath = Path.Combine(probeDir, "runtimes", rid, "native");
+                if (Directory.Exists(runtimesPath))
+                {
+                    yield return runtimesPath;
+                }
             }
         }
+    }
+
+    private static IEnumerable<string> GetNativeRids()
+    {
+        if (OperatingSystem.IsWindows()) yield return "win-x64";
+        else if (OperatingSystem.IsLinux()) yield return "linux-x64";
+        else if (OperatingSystem.IsMacOS()) yield return "osx-x64";
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
